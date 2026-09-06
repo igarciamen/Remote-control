@@ -115,6 +115,4 @@ El instalador queda en `build\compose\binaries\main\msi\`.
 
 ---
 
-## 📝 Licencia
 
-Proyecto de uso personal / educativo. Sin licencia formal asignada.

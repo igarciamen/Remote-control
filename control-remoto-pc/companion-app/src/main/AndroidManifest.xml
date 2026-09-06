@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
+    <!-- Lets a full-screen-intent notification actually launch its target
+         Activity from the background — this is the official Android
+         mechanism (same one alarm/call apps use) that is EXEMPT from the
+         "Background activity launch" block that stopped BootReceiver from
+         opening Tailscale directly. On sideloaded APKs this is normally
+         auto-granted at install; TailscaleLauncher checks and logs if not. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
+    <!-- Special permission — not grantable through the normal runtime dialog.
+         Grant it once, manually, from the PC after installing:
+         adb shell pm grant com.controlremoto.companion android.permission.WRITE_SECURE_SETTINGS -->
+    <uses-permission
+        android:name="android.permission.WRITE_SECURE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- Android 11+ "package visibility" — without this, getLaunchIntentForPackage()
+         and getPackageManager() calls about Tailscale silently return null, even
+         though the app IS installed. This declares that we're allowed to see it. -->
+    <queries>
+        <package android:name="com.tailscale.ipn" />
+    </queries>
+
+    <application
+        android:allowBackup="false"
+        android:label="Control Remoto Companion"
+        android:theme="@android:style/Theme.Material.Light">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Launched remotely from the PC with:
+             adb shell am start -n com.controlremoto.companion/.UnlockActivity
+             Uses the official KeyguardManager API — works without any special
+             permission as long as the phone has no PIN/pattern/fingerprint set. -->
+        <activity
+            android:name=".UnlockActivity"
+            android:exported="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <receiver
+            android:name=".CompanionDeviceAdminReceiver"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Experimental: enable manually once in
+             Ajustes → Accesibilidad → Servicios instalados → Control Remoto Companion.
+             See TailscaleAccessibilityService's doc comment for why. -->
+        <service
+            android:name=".TailscaleAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+    </application>
+</manifest>

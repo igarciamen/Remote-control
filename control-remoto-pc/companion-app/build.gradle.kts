@@ -1,0 +1,42 @@
+plugins {
+    id("com.android.application")
+    kotlin("android")
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+android {
+    namespace = "com.controlremoto.companion"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.controlremoto.companion"
+        minSdk = 26
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+dependencies {
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+}

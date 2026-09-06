@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="accessibility_service_description">
+        Se usa únicamente para poder relanzar Tailscale automáticamente tras un
+        reinicio del teléfono, sin necesidad de tocar la notificación a mano.
+        No lee ni interactúa con el contenido de ninguna pantalla.
+    </string>
+</resources>

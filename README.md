@@ -18,6 +18,10 @@ control-remoto-pc/
 
 ---
 
+## Demo
+https://github.com/user-attachments/assets/5ac5855a-f0fd-4ca3-a293-d529ebcf9506
+
+
 ## Desktop app
 
 ### Features
@@ -113,8 +117,3 @@ The installer ends up in `build\compose\binaries\main\msi\`.
 - The phone's Tailscale IP should never be shared with third parties
 - The companion app does not attempt, and cannot, bypass a real PIN, pattern, or fingerprint
 
----
-
-## License
-
-Personal / educational use project. No formal license assigned.

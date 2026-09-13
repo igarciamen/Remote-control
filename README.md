@@ -2,8 +2,6 @@
 
 A remote support and repair tool for Android phones, similar to TeamViewer but built specifically for Android: a desktop application in Kotlin with Jetpack Compose for Desktop controls a phone remotely, relying on ADB, scrcpy, and Tailscale, plus a companion Android app that keeps the connection active on the phone on its own, even after reboots.
 
-![status](https://img.shields.io/badge/status-functional-brightgreen) ![platform](https://img.shields.io/badge/platform-Windows%20%2B%20Android-blue) ![language](https://img.shields.io/badge/kotlin-Compose%20Desktop-purple)
-
 ---
 
 ## Repository structure

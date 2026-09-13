@@ -1,118 +1,120 @@
-# Remote Control — PC to Phone
+# Remote Control - PC to Phone
 
-Herramienta de **soporte y reparación remota de teléfonos Android**, al estilo TeamViewer pero especializada en Android: desde una app de escritorio en **Kotlin + Jetpack Compose for Desktop**, se controla un teléfono a distancia apoyándose en **ADB**, **scrcpy** y **Tailscale** — más una **app Android complementaria** (`companion-app`) que mantiene la conexión activa de forma autónoma en el teléfono, incluso tras reinicios.
+A remote support and repair tool for Android phones, similar to TeamViewer but built specifically for Android: a desktop application in Kotlin with Jetpack Compose for Desktop controls a phone remotely, relying on ADB, scrcpy, and Tailscale, plus a companion Android app that keeps the connection active on the phone on its own, even after reboots.
 
 ![status](https://img.shields.io/badge/status-functional-brightgreen) ![platform](https://img.shields.io/badge/platform-Windows%20%2B%20Android-blue) ![language](https://img.shields.io/badge/kotlin-Compose%20Desktop-purple)
 
 ---
 
-## 🏗️ Estructura del repositorio
+## Repository structure
 
-Este repo contiene **dos proyectos distintos** dentro del mismo Gradle multi-módulo:
+This repo contains two separate projects inside the same multi-module Gradle setup:
 
 ```
 control-remoto-pc/
-├── src/main/kotlin/          ← APP DE ESCRITORIO (corre en la PC, Windows)
-└── companion-app/            ← APP ANDROID (se instala en el teléfono)
+├── src/main/kotlin/          (DESKTOP APP, runs on Windows)
+└── companion-app/            (ANDROID APP, installed on the phone)
 ```
 
 ---
 
-## 🖥️ App de escritorio
+## Desktop app
 
-### Funcionalidades
+### Features
 
-| Panel | Descripción |
+| Panel | Description |
 |---|---|
-| **Devices** | Lista de dispositivos guardados (nombre, IP Tailscale, puerto). Permite editar el puerto manualmente, conectar, y **auto-descubrir el puerto de depuración inalámbrica** escaneando un rango de puertos y confirmando con un `adb connect` real. |
-| **Status & Actions** | Estado de conexión en vivo, acciones rápidas (Home, Back, Recents, Disconnect), y **Wake & Unlock** — enciende la pantalla y la desbloquea de forma remota (requiere la app companion instalada en el teléfono). |
-| **Files** | Envía archivos de la PC al teléfono y trae archivos del teléfono a la PC, con navegación de carpetas remotas. |
-| **Apps** | Instala APKs, lista apps instaladas con buscador, fuerza el cierre o desinstala aplicaciones. |
-| **System** | Controla WiFi y modo avión, ajusta el brillo. (Bluetooth deshabilitado por restricción de fábrica en teléfonos MIUI). |
-| **Automation** | Constructor manual de scripts (tap, swipe, esperar, escribir texto, home) que se guardan y reproducen con un clic — útil para repetir el mismo diagnóstico o procedimiento en varios equipos. |
+| **Devices** | List of saved devices (name, Tailscale IP, port). Lets you edit the port manually, connect, and auto discover the wireless debugging port by scanning a port range and confirming with a real `adb connect`. |
+| **Status & Actions** | Live connection status, quick actions (Home, Back, Recents, Disconnect), and Wake & Unlock: turns on the screen and unlocks it remotely (requires the companion app installed on the phone). |
+| **Files** | Sends files from the PC to the phone and pulls files from the phone to the PC, with remote folder browsing. |
+| **Apps** | Installs APKs, lists installed apps with search, force stops or uninstalls applications. |
+| **System** | Controls WiFi and airplane mode, adjusts brightness. (Bluetooth is disabled due to a factory restriction on MIUI phones.) |
+| **Automation** | A manual script builder (tap, swipe, wait, type text, home) that saves and replays action sequences with one click, useful for repeating the same diagnostic or procedure across several devices. |
 
-Además: visualización en vivo de la pantalla del teléfono (scrcpy embebido), pantalla de login con contraseña propia (hash SHA-256, nunca en texto plano), y reconexión automática al último dispositivo con reintentos y backoff exponencial.
+Also included: live screen mirroring (embedded scrcpy), a login screen with its own password (SHA-256 hash, never stored in plain text), and automatic reconnection to the last device with retries and exponential backoff.
 
 ---
 
-## 📱 App companion (Android)
+## Companion app (Android)
 
-Instalada en el teléfono para automatizar tareas que ADB por sí solo no puede sostener en el tiempo (especialmente tras un reinicio del teléfono) — pensada para dejar un equipo "siempre disponible" para soporte remoto sin intervención manual repetida.
+Installed on the phone to automate tasks that ADB alone cannot sustain over time, especially after the phone reboots. Built so a device can stay available for remote support without repeated manual steps.
 
-| Componente | Función |
+| Component | Function |
 |---|---|
-| `MainActivity` | Pantalla de estado: Device Admin, exclusión de batería, permiso de ajustes seguros. |
-| `CompanionDeviceAdminReceiver` | Protección anti-desinstalación accidental. |
-| `BootReceiver` | Al reiniciar el teléfono, reactiva ADB (USB + inalámbrico) y la política de VPN siempre activa. |
-| `TailscaleVpnPolicy` | Usa la API de **Device Owner** (`setAlwaysOnVpnPackage`) para que Android mismo mantenga Tailscale conectado, sin depender de abrir su interfaz. |
-| `WatchdogScheduler` + `TailscaleWatchdogWorker` | Tarea periódica (cada 15 min) que reaplica la política de VPN y verifica conectividad — autocurativo frente a que MIUI resetee ajustes por su cuenta. |
-| `PermissionWatcher` | Notifica (una sola vez por incidente) si el permiso `WRITE_SECURE_SETTINGS` se pierde. |
-| `UnlockActivity` | Lanzada remotamente vía `adb shell am start`, usa `KeyguardManager.requestDismissKeyguard()` para desbloquear la pantalla — solo funciona si el teléfono no tiene PIN/patrón/huella configurados. |
-| `TailscaleAccessibilityService` / `TailscaleLauncher` | Mecanismos experimentales/de respaldo para visibilidad si la política de VPN alguna vez falla. |
+| `MainActivity` | Status screen: Device Admin, battery optimization exclusion, secure settings permission. |
+| `CompanionDeviceAdminReceiver` | Protection against accidental uninstall. |
+| `BootReceiver` | On reboot, re-enables ADB (USB and wireless) and the always-on VPN policy. |
+| `TailscaleVpnPolicy` | Uses Android's Device Owner API (`setAlwaysOnVpnPackage`) so the OS itself keeps Tailscale connected, without relying on opening its interface. |
+| `WatchdogScheduler` + `TailscaleWatchdogWorker` | A periodic task (every 15 minutes) that reapplies the VPN policy and checks connectivity, self-healing if MIUI resets settings on its own. |
+| `PermissionWatcher` | Notifies (once per incident) if the `WRITE_SECURE_SETTINGS` permission is lost. |
+| `UnlockActivity` | Launched remotely via `adb shell am start`, uses `KeyguardManager.requestDismissKeyguard()` to unlock the screen. Only works if the phone has no PIN, pattern, or fingerprint set. |
+| `TailscaleAccessibilityService` / `TailscaleLauncher` | Experimental or fallback mechanisms for visibility if the VPN policy ever fails. |
 
-**Requisito clave:** la app companion necesita ser **Device Owner** del teléfono (confirmable con `dumpsys device_policy`) para poder fijar la política de VPN siempre activa — esto normalmente requiere configurarlo en un teléfono recién restablecido de fábrica, antes de añadir cualquier cuenta Google.
+**Key requirement:** the companion app needs to be the phone's Device Owner (verifiable with `dumpsys device_policy`) to set the always-on VPN policy. This normally requires setting it up on a phone that has just been reset to factory settings, before adding any Google account.
 
 ---
 
-## 🧰 Requisitos previos
+## Requirements
 
-- **Windows 10/11**
-- **JDK 17+**
-- **Android Platform Tools (ADB)** en el `PATH`
-- **[scrcpy](https://github.com/Genymobile/scrcpy)** en una ruta fija (por defecto `C:\scrcpy-win64-v4.1`)
-- **[Tailscale](https://tailscale.com/download)** con sesión iniciada en la PC y en el teléfono, misma cuenta personal
-- **Android Studio** para compilar ambos módulos
+- Windows 10/11
+- JDK 17+
+- Android Platform Tools (ADB) on the `PATH`
+- [scrcpy](https://github.com/Genymobile/scrcpy) in a fixed path (default `C:\scrcpy-win64-v4.1`)
+- [Tailscale](https://tailscale.com/download) signed in on both the PC and the phone, same personal account
+- Android Studio to build both modules
 
-### En el teléfono
+### On the phone
 
-- Modo desarrollador + depuración USB activada
-- Depuración inalámbrica activa (Android 11+) o `adb tcpip 5555` tras cada reinicio (Android 10)
-- MIUI: "USB debugging (Security settings)" activado para `tap`/`swipe`/`typeText`
-- Para la app companion: Device Owner configurado, y permiso concedido una vez por cable:
+- Developer mode and USB debugging enabled
+- Wireless debugging active (Android 11+) or `adb tcpip 5555` after each reboot (Android 10)
+- MIUI: "USB debugging (Security settings)" enabled for `tap`/`swipe`/`typeText`
+- For the companion app: Device Owner configured, and the permission granted once over cable:
   ```
   adb shell pm grant com.controlremoto.companion android.permission.WRITE_SECURE_SETTINGS
   ```
 
 ---
 
-## 🚀 Compilar y ejecutar
+## Build and run
 
-**App de escritorio:**
+**Desktop app:**
 ```
 .\gradlew.bat run
 ```
 
-**App companion (con el teléfono conectado por ADB):**
+**Companion app (with the phone connected via ADB):**
 ```
 .\gradlew.bat :companion-app:installDebug
 ```
 
-**Generar el instalador `.msi` de la app de escritorio:**
+**Generate the desktop app's `.msi` installer:**
 ```
 .\gradlew.bat packageMsi
 ```
-El instalador queda en `build\compose\binaries\main\msi\`.
+The installer ends up in `build\compose\binaries\main\msi\`.
 
 ---
 
-## ⚠️ Limitaciones conocidas
+## Known limitations
 
-| Limitación | Motivo |
+| Limitation | Reason |
 |---|---|
-| Bluetooth no controlable vía ADB | MIUI no concede `BLUETOOTH_ADMIN` al shell de ADB |
-| `Wake & Unlock` no bypassa un PIN/patrón real | Por diseño de seguridad de Android — solo dismiss de swipe-to-unlock sin credencial |
-| La app companion necesita ser Device Owner | Requiere configuración en teléfono recién restablecido de fábrica |
-| Tras un reinicio del teléfono sin depuración inalámbrica (Android 10) | Requiere reconectar el cable USB una vez y repetir `adb tcpip 5555` |
+| Bluetooth cannot be controlled via ADB | MIUI does not grant `BLUETOOTH_ADMIN` to the ADB shell |
+| `Wake & Unlock` cannot bypass a real PIN/pattern | By Android's own security design, it only dismisses swipe-to-unlock without a credential |
+| The companion app needs to be Device Owner | Requires setup on a phone freshly reset to factory settings |
+| After a phone reboot without wireless debugging (Android 10) | Requires reconnecting the USB cable once and repeating `adb tcpip 5555` |
 
 ---
 
-## 🔐 Seguridad
+## Security
 
-- Contraseña propia de la app de escritorio: hash SHA-256, nunca en texto plano
-- Tailscale mantiene la conexión dentro de una red privada cifrada
-- La IP Tailscale del teléfono nunca debe compartirse con terceros
-- La app companion no intenta ni puede saltarse un PIN/patrón/huella real
+- The desktop app's own password is stored as a SHA-256 hash, never in plain text
+- Tailscale keeps the connection inside an encrypted private network
+- The phone's Tailscale IP should never be shared with third parties
+- The companion app does not attempt, and cannot, bypass a real PIN, pattern, or fingerprint
 
 ---
 
+## License
 
+Personal / educational use project. No formal license assigned.

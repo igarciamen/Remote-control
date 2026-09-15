@@ -17,7 +17,8 @@ control-remoto-pc/
 ---
 
 ## Demo
-https://github.com/user-attachments/assets/5ac5855a-f0fd-4ca3-a293-d529ebcf9506
+
+https://github.com/user-attachments/assets/eb0822c8-9e22-45a9-b7ea-29e3379cc554
 
 
 ## Desktop app
